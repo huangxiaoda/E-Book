@@ -190,19 +190,19 @@
 
 <!-- 底部导航栏 -->
 <div class="tab-bar">
-    <div class="tab-item" data-view="practice">📖 练习</div>
-    <div class="tab-item" data-view="mistakes">📚 错题本</div>
-    <div class="tab-item" data-view="stats">📊 统计</div>
+    <div class="tab-item" data-view="practice">📖 Practice</div>
+    <div class="tab-item" data-view="mistakes">📚 Mistakes</div>
+    <div class="tab-item" data-view="stats">📊 Stats</div>
 </div>
 
 <!-- 练习视图 -->
 <div id="practiceView" class="view">
     <div class="card">
-        <h2 style="margin-bottom: 16px;">📂 选择分类</h2>
+        <h2 style="margin-bottom: 16px;">📂 Select Category</h2>
         <div id="categoryList" class="category-buttons"></div>
     </div>
     <div id="questionListContainer" class="card" style="display: none;">
-        <h2>📋 题目列表</h2>
+        <h2>📋 Questions</h2>
         <div id="questionList"></div>
     </div>
 </div>
@@ -212,12 +212,12 @@
     <div id="quizContainer" class="card">
         <h2 id="questionText"></h2>
         <div id="optionsContainer"></div>
-        <div id="feedbackCorrect" class="correct-feedback">✅ 回答正确！</div>
+        <div id="feedbackCorrect" class="correct-feedback">✅ Correct！</div>
         <div id="feedbackIncorrect" class="incorrect-feedback"></div>
         <div id="explanationContainer" class="explanation"></div>
         <div class="button-group">
-            <button id="backToListBtn" class="btn btn-secondary">⬅️ 返回列表</button>
-            <button id="nextBtn" class="btn">下一题 ➡️</button>
+            <button id="backToListBtn" class="btn btn-secondary">⬅️ Back to List</button>
+            <button id="nextBtn" class="btn">Next ➡️</button>
         </div>
     </div>
 </div>
@@ -225,7 +225,7 @@
 <!-- 错题本视图 -->
 <div id="mistakesView" class="view">
     <div class="card">
-        <h2>📖 错题本</h2>
+        <h2>📖 Mistakes</h2>
         <div id="mistakesList"></div>
     </div>
 </div>
@@ -237,15 +237,15 @@
         <div style="display: flex; justify-content: space-between; margin-top: 20px;">
             <div>
                 <div class="stats-number" id="totalAnswered">0</div>
-                <div>总做题数</div>
+                <div>Total Answered</div>
             </div>
             <div>
                 <div class="stats-number" id="correctRate">0%</div>
-                <div>正确率</div>
+                <div>Accuracy</div>
             </div>
             <div>
                 <div class="stats-number" id="mistakesCount">0</div>
-                <div>错题数</div>
+                <div>Mistakes</div>
             </div>
         </div>
     </div>
@@ -2134,16 +2134,84 @@
 ];
 
 
+// 将原有细分类别映射到 6 个英文大类
+const categoryMapping = {
+    // Grounding & Protection
+    "GFCI Commercial": "Grounding & Protection",
+    "GFCI Requirements": "Grounding & Protection",
+    "GFCI Exceptions": "Grounding & Protection",
+    "AFCI GFCI Requirements": "Grounding & Protection",
+    "AFCI Requirements": "Grounding & Protection",
+    "Grounding": "Grounding & Protection",
+    "Equipment Grounding": "Grounding & Protection",
+    "Separately Derived Systems": "Grounding & Protection",
+    "Overcurrent Protection": "Grounding & Protection",
+    "2023 NEC Updates": "Grounding & Protection",
+
+    // Wiring & Conductors
+    "Service Conductors": "Wiring & Conductors",
+    "Conductors": "Wiring & Conductors",
+    "Parallel Conductors": "Wiring & Conductors",
+    "Tap Conductors": "Wiring & Conductors",
+    "Wiring Methods": "Wiring & Conductors",
+    "MC Cable": "Wiring & Conductors",
+    "Flexible Metal Conduit": "Wiring & Conductors",
+    "Conduit Bends": "Wiring & Conductors",
+    "Conduit Support": "Wiring & Conductors",
+    "Cable Tray": "Wiring & Conductors",
+
+    // Equipment & Calculations
+    "Transformer Protection": "Equipment & Calculations",
+    "Transformer Installation": "Equipment & Calculations",
+    "Box Fill": "Equipment & Calculations",
+    "Box Fill Calculations": "Equipment & Calculations",
+    "Working Space": "Equipment & Calculations",
+    "Voltage Drop": "Equipment & Calculations",
+    "Neutral Calculations": "Equipment & Calculations",
+    "Feeder Calculations": "Equipment & Calculations",
+    "Feeder Requirements": "Equipment & Calculations",
+    "Branch Circuits": "Equipment & Calculations",
+
+    // Receptacles & Lighting
+    "Receptacles": "Receptacles & Lighting",
+    "Receptacle Placement": "Receptacles & Lighting",
+    "Receptacle Ratings": "Receptacles & Lighting",
+    "Outdoor Receptacles": "Receptacles & Lighting",
+    "Rooftop Receptacles": "Receptacles & Lighting",
+    "Laundry Receptacles": "Receptacles & Lighting",
+    "Lighting Fixtures": "Receptacles & Lighting",
+    "Water Heaters": "Receptacles & Lighting",
+    "Spas and Hot Tubs": "Receptacles & Lighting",
+    "Emergency Systems": "Receptacles & Lighting",
+    "Fire Pumps": "Receptacles & Lighting",
+    "Information Technology": "Receptacles & Lighting",
+
+    // Code & Definitions
+    "Definitions": "Code & Definitions",
+    "Equipment Evaluation": "Code & Definitions",
+    "Service Clearances": "Code & Definitions",
+    "Underground Cover": "Code & Definitions",
+    "Underground Installations": "Code & Definitions",
+    "Underground Boxes": "Code & Definitions",
+    "Conduit Bodies": "Code & Definitions",
+    "Panelboards": "Code & Definitions",
+    "Disconnecting Means": "Code & Definitions"
+};
+    
   function convertAdaloToInternal(raw) {
-        return raw.map(item => ({
+    return raw.map(item => {
+        const originalCategory = item.Category;
+        const mappedCategory = categoryMapping[originalCategory] || "Other"; // 未映射的归入 Other
+        return {
             id: item.ID,
-            category: item.Category,
+            category: mappedCategory,          // 使用映射后的大类
             text: item.Title,
             options: [item["Option A"], item["Option B"], item["Option C"], item["Option D"]],
             correct: ["A","B","C","D"].indexOf(item["Correct Answer"]?.toUpperCase()),
             explanation: item.Explanation || ""
-        }));
-    }
+        };
+    });
+}
 
     let questions = convertAdaloToInternal(embeddedQuestions);  
 
@@ -2186,7 +2254,7 @@
         const container = document.getElementById('mistakesList');
         if (!container) return;
         if (mistakes.length === 0) {
-            container.innerHTML = '<div class="card" style="text-align:center; padding: 40px;">📭 暂无错题，继续加油！</div>';
+            container.innerHTML = '<div class="card" style="text-align:center; padding: 40px;">📭 No mistakes yet. Keep going!</div>';
             return;
         }
         let html = '';
@@ -2320,7 +2388,7 @@
             document.getElementById('feedbackCorrect').style.display = 'block';
         } else {
             const correctLetter = String.fromCharCode(65 + q.correct);
-            document.getElementById('feedbackIncorrect').innerHTML = `❌ 错误！正确答案是 ${correctLetter}. ${q.options[q.correct]}`;
+            document.getElementById('feedbackIncorrect').innerHTML = `❌ Incorrect! The correct answer is ${correctLetter}. ${q.options[q.correct]}`;
             document.getElementById('feedbackIncorrect').style.display = 'block';
         }
         document.getElementById('explanationContainer').style.display = 'block';
@@ -2329,7 +2397,7 @@
     // 下一题
     function nextQuestion() {
         if (!answered) {
-            alert("请先完成当前题目");
+            alert("Please answer the current question first");
             return;
         }
         if (currentIndex + 1 < currentQuestionList.length) {
@@ -2337,7 +2405,7 @@
             answered = false;
             renderQuiz();
         } else {
-            alert("🎉 恭喜！已完成本分类所有题目！");
+            alert("🎉 Congratulations! You've completed all questions in this category!");
             // 可选：返回题目列表
             showPracticeView();
             renderQuestionList();
