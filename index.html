@@ -255,7 +255,7 @@
     // --------------------------------------------------------------
     // 1. 题库数据（请替换成你自己的题目）
     // --------------------------------------------------------------
-    const questions = [
+    const embeddedQuestions = [
   {
     "ID": 1,
     "Name": "",
@@ -2134,36 +2134,18 @@
 ];
 
 
-    
-fetch('questions.json')
-  .then(res => res.json())
-  .then(rawData => {
-      // 将原始数据转换为所需格式
-      const transformedQuestions = rawData.map(item => {
-          // 构建选项数组
-          const options = [
-              item["Option A"],
-              item["Option B"],
-              item["Option C"],
-              item["Option D"]
-          ];
-          // 将正确答案字母转换为索引 (A->0, B->1, C->2, D->3)
-          const correctMap = { "A": 0, "B": 1, "C": 2, "D": 3 };
-          const correctIndex = correctMap[item["Correct Answer"]];
+  function convertAdaloToInternal(raw) {
+        return raw.map(item => ({
+            id: item.ID,
+            category: item.Category,
+            text: item.Title,
+            options: [item["Option A"], item["Option B"], item["Option C"], item["Option D"]],
+            correct: ["A","B","C","D"].indexOf(item["Correct Answer"]?.toUpperCase()),
+            explanation: item.Explanation || ""
+        }));
+    }
 
-          return {
-              id: item.ID,
-              category: item.Category,
-              text: item.Title,
-              options: options,
-              correct: correctIndex,
-              explanation: item.Explanation
-          };
-      });
-      questions = transformedQuestions;
-      initApp();
-  })
-  .catch(...);
+    let questions = convertAdaloToInternal(embeddedQuestions);  
 
     
     // --------------------------------------------------------------
