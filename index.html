@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>电工考证宝典</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #1c1c1e;
+            padding-bottom: 70px;
+        }
+
+        /* 底部导航栏 */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 16px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            border-top: 1px solid #e9e9ef;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255,255,255,0.96);
+            z-index: 100;
+        }
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 12px;
+            font-weight: 500;
+            color: #8e8e93;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tab-item.active {
+            color: #007aff;
+        }
+
+        /* 主内容区 */
+        .view {
+            display: none;
+            padding: 20px 16px 80px 16px;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border: 1px solid #e9e9ef;
+        }
+
+        /* 分类按钮 */
+        .category-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .category-btn {
+            background-color: #f2f2f5;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1c1c1e;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .category-btn.active {
+            background-color: #007aff;
+            color: white;
+        }
+
+        /* 题目列表 */
+        .question-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e9e9ef;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .question-item:active {
+            background-color: #f9f9fb;
+        }
+
+        /* 答题页选项 */
+        .option {
+            background-color: #f2f2f5;
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .option:active {
+            background-color: #e5e5ea;
+        }
+
+        .correct-feedback {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 12px;
+            background-color: #e9f5e9;
+            color: #1e7e34;
+            display: none;
+        }
+
+        .incorrect-feedback {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 12px;
+            background-color: #ffe6e6;
+            color: #c00;
+            display: none;
+        }
+
+        .explanation {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: #f2f2f5;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #3a3a3c;
+            display: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-secondary {
+            background-color: #e9e9ef;
+            color: #1c1c1e;
+        }
+
+        .stats-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #007aff;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 底部导航栏 -->
+<div class="tab-bar">
+    <div class="tab-item" data-view="practice">📖 练习</div>
+    <div class="tab-item" data-view="mistakes">📚 错题本</div>
+    <div class="tab-item" data-view="stats">📊 统计</div>
+</div>
+
+<!-- 练习视图 -->
+<div id="practiceView" class="view">
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">📂 选择分类</h2>
+        <div id="categoryList" class="category-buttons"></div>
+    </div>
+    <div id="questionListContainer" class="card" style="display: none;">
+        <h2>📋 题目列表</h2>
+        <div id="questionList"></div>
+    </div>
+</div>
+
+<!-- 答题视图（单独显示） -->
+<div id="quizView" class="view">
+    <div id="quizContainer" class="card">
+        <h2 id="questionText"></h2>
+        <div id="optionsContainer"></div>
+        <div id="feedbackCorrect" class="correct-feedback">✅ 回答正确！</div>
+        <div id="feedbackIncorrect" class="incorrect-feedback"></div>
+        <div id="explanationContainer" class="explanation"></div>
+        <div class="button-group">
+            <button id="backToListBtn" class="btn btn-secondary">⬅️ 返回列表</button>
+            <button id="nextBtn" class="btn">下一题 ➡️</button>
+        </div>
+    </div>
+</div>
+
+<!-- 错题本视图 -->
+<div id="mistakesView" class="view">
+    <div class="card">
+        <h2>📖 错题本</h2>
+        <div id="mistakesList"></div>
+    </div>
+</div>
+
+<!-- 统计视图 -->
+<div id="statsView" class="view">
+    <div class="card">
+        <h2>📊 学习统计</h2>
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+            <div>
+                <div class="stats-number" id="totalAnswered">0</div>
+                <div>总做题数</div>
+            </div>
+            <div>
+                <div class="stats-number" id="correctRate">0%</div>
+                <div>正确率</div>
+            </div>
+            <div>
+                <div class="stats-number" id="mistakesCount">0</div>
+                <div>错题数</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // 1. 题库数据（请替换成你自己的题目）
+    // --------------------------------------------------------------
+    const questions = [
+        {
+            id: 1,
+            category: "Outdoor Receptacles",
+            text: "Receptacles installed outdoors in a dwelling unit at grade level must be:",
+            options: [
+                "Weather-resistant only",
+                "GFCI protected only",
+                "Both weather-resistant and GFCI protected",
+                "Neither"
+            ],
+            correct: 2,      // 索引从0开始，0=A,1=B,2=C,3=D
+            explanation: "Section 210.8(A)(3) requires GFCI protection for outdoor receptacles. Section 406.9(A) requires listed weather-resistant receptacles for outdoor damp/wet locations."
+        },
+        {
+            id: 2,
+            category: "Wiring Methods",
+            text: "Type NM cable installed in a dwelling unit attic requires protection when:",
+            options: [
+                "Within 6 feet of the attic entrance",
+                "Within 7 feet of the attic floor",
+                "When installed across the top of attic joists",
+                "All of the above"
+            ],
+            correct: 3,
+            explanation: "Section 334.23 requires NM cable in attics to be protected from physical damage when installed across the top of attic joists within 7 feet of the attic floor."
+        }
+        // 在这里添加更多题目，格式如上
+    ];
+
+    // --------------------------------------------------------------
+    // 2. 辅助数据
+    // --------------------------------------------------------------
+    let currentCategory = null;          // 当前选中的分类
+    let currentQuestionList = [];         // 当前分类下的题目列表
+    let currentIndex = 0;                // 当前答题页显示的题目索引
+    let answered = false;                // 当前题目是否已作答（防止重复判题）
+
+    // 错题本数据结构: { id: 题目id, category: "分类", timestamp: 时间戳 }
+    let mistakes = JSON.parse(localStorage.getItem('mistakes')) || [];
+
+    // 用户答题记录: { totalAnswered, correctCount }
+    let stats = JSON.parse(localStorage.getItem('stats')) || { totalAnswered: 0, correctCount: 0 };
+
+    // --------------------------------------------------------------
+    // 3. 工具函数
+    // --------------------------------------------------------------
+    function saveMistakes() {
+        localStorage.setItem('mistakes', JSON.stringify(mistakes));
+    }
+
+    function saveStats() {
+        localStorage.setItem('stats', JSON.stringify(stats));
+    }
+
+    // 更新统计显示
+    function updateStatsUI() {
+        document.getElementById('totalAnswered').innerText = stats.totalAnswered;
+        const rate = stats.totalAnswered === 0 ? 0 : Math.round((stats.correctCount / stats.totalAnswered) * 100);
+        document.getElementById('correctRate').innerText = `${rate}%`;
+        document.getElementById('mistakesCount').innerText = mistakes.length;
+    }
+
+    // 渲染错题本列表
+    function renderMistakes() {
+        const container = document.getElementById('mistakesList');
+        if (!container) return;
+        if (mistakes.length === 0) {
+            container.innerHTML = '<div class="card" style="text-align:center; padding: 40px;">📭 暂无错题，继续加油！</div>';
+            return;
+        }
+        let html = '';
+        mistakes.forEach(mistake => {
+            const q = questions.find(q => q.id === mistake.id);
+            if (!q) return;
+            html += `
+                <div class="question-item" data-question-id="${q.id}">
+                    <strong>${q.category}</strong><br>
+                    ${q.text.substring(0, 60)}...
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // 添加点击事件，跳转到答题页并显示该错题
+        document.querySelectorAll('#mistakesList .question-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const qid = parseInt(el.dataset.questionId);
+                const q = questions.find(q => q.id === qid);
+                if (q) {
+                    // 设置当前分类为该错题的分类
+                    currentCategory = q.category;
+                    // 获取该分类下所有题目
+                    currentQuestionList = questions.filter(qq => qq.category === currentCategory);
+                    // 找到当前错题在列表中的索引
+                    currentIndex = currentQuestionList.findIndex(qq => qq.id === qid);
+                    if (currentIndex === -1) currentIndex = 0;
+                    answered = false;
+                    showQuizView();
+                    renderQuiz();
+                }
+            });
+        });
+    }
+
+    // 渲染练习页的分类按钮
+    function renderCategories() {
+        const categories = [...new Set(questions.map(q => q.category))];
+        const container = document.getElementById('categoryList');
+        container.innerHTML = categories.map(cat => `<button class="category-btn" data-category="${cat}">${cat}</button>`).join('');
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.dataset.category;
+                currentQuestionList = questions.filter(q => q.category === currentCategory);
+                renderQuestionList();
+                document.getElementById('questionListContainer').style.display = 'block';
+            });
+        });
+    }
+
+    // 渲染题目列表
+    function renderQuestionList() {
+        const container = document.getElementById('questionList');
+        if (!currentQuestionList.length) {
+            container.innerHTML = '<div>暂无题目</div>';
+            return;
+        }
+        container.innerHTML = currentQuestionList.map((q, idx) => `
+            <div class="question-item" data-index="${idx}">
+                <strong>${idx+1}. ${q.text}</strong>
+            </div>
+        `).join('');
+        document.querySelectorAll('#questionList .question-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const idx = parseInt(el.dataset.index);
+                currentIndex = idx;
+                answered = false;
+                showQuizView();
+                renderQuiz();
+            });
+        });
+    }
+
+    // 渲染答题页
+    function renderQuiz() {
+        const q = currentQuestionList[currentIndex];
+        if (!q) return;
+        document.getElementById('questionText').innerText = q.text;
+        const optionsHtml = q.options.map((opt, idx) => `
+            <div class="option" data-opt-index="${idx}">${String.fromCharCode(65+idx)}. ${opt}</div>
+        `).join('');
+        document.getElementById('optionsContainer').innerHTML = optionsHtml;
+        document.getElementById('explanationContainer').innerHTML = q.explanation;
+        document.getElementById('feedbackCorrect').style.display = 'none';
+        document.getElementById('feedbackIncorrect').style.display = 'none';
+        document.getElementById('explanationContainer').style.display = 'none';
+        answered = false;
+
+        // 绑定选项点击事件
+        document.querySelectorAll('.option').forEach(opt => {
+            opt.removeEventListener('click', handleOptionClick);
+            opt.addEventListener('click', handleOptionClick);
+        });
+    }
+
+    function handleOptionClick(e) {
+        if (answered) return;
+        const selectedIdx = parseInt(e.currentTarget.dataset.optIndex);
+        const q = currentQuestionList[currentIndex];
+        const isCorrect = (selectedIdx === q.correct);
+        answered = true;
+
+        // 更新统计
+        stats.totalAnswered++;
+        if (isCorrect) {
+            stats.correctCount++;
+            saveStats();
+            updateStatsUI();
+            // 如果该题在错题本中，则移除
+            const mistakeIndex = mistakes.findIndex(m => m.id === q.id);
+            if (mistakeIndex !== -1) {
+                mistakes.splice(mistakeIndex, 1);
+                saveMistakes();
+                renderMistakes(); // 更新错题本显示
+            }
+        } else {
+            // 记录错题（不重复）
+            if (!mistakes.some(m => m.id === q.id)) {
+                mistakes.push({ id: q.id, category: q.category, timestamp: Date.now() });
+                saveMistakes();
+                renderMistakes();
+            }
+        }
+        saveStats();
+        updateStatsUI();
+
+        // 显示反馈
+        if (isCorrect) {
+            document.getElementById('feedbackCorrect').style.display = 'block';
+        } else {
+            const correctLetter = String.fromCharCode(65 + q.correct);
+            document.getElementById('feedbackIncorrect').innerHTML = `❌ 错误！正确答案是 ${correctLetter}. ${q.options[q.correct]}`;
+            document.getElementById('feedbackIncorrect').style.display = 'block';
+        }
+        document.getElementById('explanationContainer').style.display = 'block';
+    }
+
+    // 下一题
+    function nextQuestion() {
+        if (!answered) {
+            alert("请先完成当前题目");
+            return;
+        }
+        if (currentIndex + 1 < currentQuestionList.length) {
+            currentIndex++;
+            answered = false;
+            renderQuiz();
+        } else {
+            alert("🎉 恭喜！已完成本分类所有题目！");
+            // 可选：返回题目列表
+            showPracticeView();
+            renderQuestionList();
+        }
+    }
+
+    // 返回列表
+    function backToList() {
+        showPracticeView();
+        // 如果当前有分类，刷新列表
+        if (currentCategory) {
+            currentQuestionList = questions.filter(q => q.category === currentCategory);
+            renderQuestionList();
+            document.getElementById('questionListContainer').style.display = 'block';
+        }
+    }
+
+    // 视图切换
+    function showPracticeView() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('practiceView').classList.add('active');
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        document.querySelector('.tab-item[data-view="practice"]').classList.add('active');
+        // 确保分类列表可见
+        if (!currentCategory) {
+            document.getElementById('questionListContainer').style.display = 'none';
+        } else {
+            renderQuestionList();
+        }
+    }
+
+    function showQuizView() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('quizView').classList.add('active');
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        // 答题页不激活底部高亮，但可以保留无高亮
+    }
+
+    function showMistakesView() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('mistakesView').classList.add('active');
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        document.querySelector('.tab-item[data-view="mistakes"]').classList.add('active');
+        renderMistakes();
+    }
+
+    function showStatsView() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('statsView').classList.add('active');
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        document.querySelector('.tab-item[data-view="stats"]').classList.add('active');
+        updateStatsUI();
+    }
+
+    // 初始化
+    function init() {
+        renderCategories();
+        showPracticeView();
+        updateStatsUI();
+
+        // 绑定底部导航
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const view = tab.dataset.view;
+                if (view === 'practice') showPracticeView();
+                else if (view === 'mistakes') showMistakesView();
+                else if (view === 'stats') showStatsView();
+            });
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+        document.getElementById('backToListBtn').addEventListener('click', backToList);
+    }
+
+    init();
+</script>
+</body>
+</html>
