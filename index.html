@@ -3385,7 +3385,21 @@ const categoryMapping = {
     });
 }
 
-    let questions = convertAdaloToInternal(embeddedQuestions);  
+       let isPro = localStorage.getItem('isPro') === 'true';
+    let allQuestions = convertAdaloToInternal(embeddedQuestions);
+    let questions;
+    if (isPro) {
+        questions = allQuestions;
+    } else {
+        questions = allQuestions.slice(0, 30);
+        // 显示升级横幅（可选）
+        const banner = document.createElement('div');
+        banner.id = 'upgradeBanner';
+        banner.style.cssText = 'background:#ff9800;color:white;text-align:center;padding:8px;font-size:14px;cursor:pointer;';
+        banner.innerHTML = '⚡ Unlock all 125+ questions with Pro! <strong>Click here</strong>';
+        banner.onclick = openPurchaseModal;
+        document.body.insertBefore(banner, document.body.firstChild);
+    }
 
     
     // --------------------------------------------------------------
@@ -3652,78 +3666,77 @@ const categoryMapping = {
         document.getElementById('backToListBtn').addEventListener('click', backToList);
     }
 
-    //init();
+   
 
-// 1. Paddle 初始化
-    Paddle.Environment.set('sandbox'); // 测试环境用，上架前改 production
-    Paddle.Initialize({ token: 'YOUR_PADDLE_CLIENT_SIDE_TOKEN' }); // 替换为你的 Token
+// 1. Paddle 初始化（不依赖 DOM，可以放在外面）
+Paddle.Environment.set('sandbox');
+Paddle.Initialize({ token: 'YOUR_PADDLE_CLIENT_SIDE_TOKEN' });
 
-    // 2. 购买弹窗逻辑
+// 全局函数：打开购买弹窗（在 DOM 加载后才能调用，但先声明）
+function openPurchaseModal() {
+    const modal = document.getElementById('purchaseModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+// 全局函数：处理购买
+function handlePurchase(priceId) {
+    Paddle.Checkout.open({
+        items: [{ priceId: priceId, quantity: 1 }],
+        settings: { displayMode: 'overlay', successUrl: 'electricianexam://payment-success' }
+    });
+}
+
+// 等待 DOM 和题库数据加载完成后，先显示封面，再延迟进入练习页
+window.addEventListener('DOMContentLoaded', () => {
+    // ----- 1. 初始化支付相关的 DOM 元素和事件 -----
     const modal = document.getElementById('purchaseModal');
     const restoreBtn = document.getElementById('restorePurchaseBtn');
-    
-    // 打开弹窗
-    function openPurchaseModal() { modal.style.display = 'flex'; }
-    
-    // 处理购买（根据 Price ID 调起 Paddle 支付）
-    function handlePurchase(priceId) {
-        Paddle.Checkout.open({
-            items: [{ priceId: priceId, quantity: 1 }],
-            settings: { displayMode: 'overlay', successUrl: 'electricianexam://payment-success' }
+    const closeBtn = document.getElementById('closeModalBtn');
+
+    if (modal && restoreBtn && closeBtn) {
+        // 恢复购买
+        restoreBtn.onclick = () => {
+            // 简单提示或调起订单历史
+            alert('Please log in or contact support@yourapp.com to restore your purchase.');
+        };
+        // 关闭弹窗
+        closeBtn.onclick = () => modal.style.display = 'none';
+        // 绑定购买选项点击事件
+        document.querySelectorAll('.purchase-option').forEach(opt => {
+            opt.onclick = () => handlePurchase(opt.dataset.priceId);
         });
     }
 
-    // 恢复购买
-    restoreBtn.onclick = () => {
-        // 方案 A: 调起 Paddle 的订单历史弹窗 (需要用户登录)
-        Paddle.Checkout.open({ settings: { displayMode: 'overlay' } });
-        // 方案 B: 提示用户联系客服
-        // alert('Please contact support@yourapp.com to restore your purchase.');
-    };
-
-    // 绑定弹窗内选项的点击事件
-    document.querySelectorAll('.purchase-option').forEach(opt => {
-        opt.onclick = () => handlePurchase(opt.dataset.priceId);
-    });
-    document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
-
-    // 3. 内容付费控制
-    let questions = [];
-    let isPro = localStorage.getItem('isPro') === 'true'; // 从本地读取付费状态
-    
-    // 如果是免费版，限制题目数量
-    function loadQuestions() {
-        const allQuestions = convertAdaloToInternal(embeddedQuestions); // 需要定义 embeddedQuestions
-        if (isPro) {
-            questions = allQuestions; // 付费用户解锁全部
-        } else {
-            questions = allQuestions.slice(0, 30); // 免费用户仅30题
-            // 可选: 显示升级提示条
-            const banner = document.createElement('div');
-            banner.innerHTML = '⚡ <a href="#" id="upgradeLink">Upgrade to Pro</a> to unlock all 125+ questions.';
-            banner.style.cssText = 'background:#ff9800;color:#fff;padding:8px;text-align:center;';
-            document.body.insertBefore(banner, document.body.firstChild);
-            document.getElementById('upgradeLink')?.addEventListener('click', (e) => { e.preventDefault(); openPurchaseModal(); });
-        }
-        // 重新渲染应用...
-        initApp();
+    // ----- 2. 支付成功回调（检测 URL 参数）-----
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment_success') === 'true') {
+        localStorage.setItem('isPro', 'true');
+        alert('Thank you! All questions are now unlocked.');
+        location.reload();
+        return; // 刷新后不会再执行后续
     }
-    
-    // 4. 支付成功回调处理 (当从支付页面返回时)
-    window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('payment_success') === 'true') {
-            localStorage.setItem('isPro', 'true');
-            alert('Thank you! All questions are now unlocked.');
-            location.reload();
-        }
-    });
-    
-    // 启动应用
-    loadQuestions();
-    
-    // 等待 DOM 和题库数据加载完成后，先显示封面，再延迟进入练习页
-window.addEventListener('DOMContentLoaded', () => {
+
+    // ----- 3. 内容付费控制（决定加载哪些题目）-----
+    let isPro = localStorage.getItem('isPro') === 'true';
+    let allQuestions = convertAdaloToInternal(embeddedQuestions); // 确保 embeddedQuestions 已定义
+    let questions;
+    if (isPro) {
+        questions = allQuestions;
+    } else {
+        questions = allQuestions.slice(0, 30);
+        // 显示升级横幅
+        const banner = document.createElement('div');
+        banner.id = 'upgradeBanner';
+        banner.style.cssText = 'background:#ff9800;color:white;text-align:center;padding:8px;font-size:14px;cursor:pointer;';
+        banner.innerHTML = '⚡ Unlock all 125+ questions with Pro! <strong>Click here</strong>';
+        banner.onclick = openPurchaseModal;
+        document.body.insertBefore(banner, document.body.firstChild);
+    }
+
+    // 将 questions 挂到全局或传给 init 函数
+    window.questions = questions; // 或者直接修改你的全局变量
+
+    // ----- 4. 启动封面和主应用 -----
     // 延迟 2 秒后隐藏封面并初始化应用
     setTimeout(() => {
         const splash = document.getElementById('splashScreen');
@@ -3733,7 +3746,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 splash.style.display = 'none';
             }, 500);
         }
-        // 调用原有的初始化函数
+        // 调用原有的初始化函数（你的 init 函数应该已经定义了）
         init();
     }, 2000);
 });
