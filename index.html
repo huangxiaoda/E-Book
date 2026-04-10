@@ -3385,22 +3385,6 @@ const categoryMapping = {
     });
 }
 
-       let isPro = localStorage.getItem('isPro') === 'true';
-    let allQuestions = convertAdaloToInternal(embeddedQuestions);
-    let questions;
-    if (isPro) {
-        questions = allQuestions;
-    } else {
-        questions = allQuestions.slice(0, 30);
-        // 显示升级横幅（可选）
-        const banner = document.createElement('div');
-        banner.id = 'upgradeBanner';
-        banner.style.cssText = 'background:#ff9800;color:white;text-align:center;padding:8px;font-size:14px;cursor:pointer;';
-        banner.innerHTML = '⚡ Unlock all 125+ questions with Pro! <strong>Click here</strong>';
-        banner.onclick = openPurchaseModal;
-        document.body.insertBefore(banner, document.body.firstChild);
-    }
-
     
     // --------------------------------------------------------------
     // 2. 辅助数据
